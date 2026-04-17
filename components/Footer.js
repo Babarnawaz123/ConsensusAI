@@ -37,13 +37,13 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20">
+              <div className="p-2 rounded-xl bg-primary/10">
                 <Brain className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <h3 className="text-lg font-bold">
                   <span>Consensus</span>
-                  <span className="gradient-text">AI</span>
+                  <span className="text-primary">AI</span>
                 </h3>
               </div>
             </Link>
@@ -132,7 +132,7 @@ export default function Footer() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ConsensusAI. Open Source.
+            &copy; {new Date().getFullYear()} ConsensusAI. Open Source.
           </p>
         </div>
       </div>

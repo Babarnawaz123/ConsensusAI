@@ -143,7 +143,7 @@ export default function SettingsPage() {
               Configuration
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="gradient-text">Settings</span>
+              <span className="text-primary">Settings</span>
             </h1>
             <p className="text-xl text-muted-foreground">
               Configure your API keys and customize your ConsensusAI experience.

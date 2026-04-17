@@ -96,7 +96,7 @@ export default function ContactPage() {
               Get in Touch
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Contact <span className="gradient-text">Us</span>
+              Contact <span className="text-primary">Us</span>
             </h1>
             <p className="text-xl text-muted-foreground">
               Have questions, feedback, or want to contribute? We'd love to hear from you.

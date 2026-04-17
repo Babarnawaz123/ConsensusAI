@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,16 @@ import {
   TrendingUp, TrendingDown, Minus, AlertTriangle, Search, 
   Clock, Zap, BarChart3, History, Trophy, Brain, Activity,
   ChevronRight, RefreshCw, Target, Shield, AlertCircle,
-  Sparkles, ArrowRight
+  Sparkles, ArrowRight, Download, Image, Share2, Copy, Check
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell } from 'recharts';
 
 export default function ConsensusAI() {
   const [ticker, setTicker] = useState('');
@@ -26,6 +34,8 @@ export default function ConsensusAI() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [activeTab, setActiveTab] = useState('analyze');
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const analysisRef = useRef(null);
 
   useEffect(() => {
     fetchHistory();
@@ -75,11 +85,67 @@ export default function ConsensusAI() {
       setAnalysis(data);
       fetchHistory();
       fetchLeaderboard();
+      toast.success(`Analysis complete for ${data.ticker}!`);
     } catch (err) {
       setError(err.message);
+      toast.error('Analysis failed: ' + err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const exportAsJSON = () => {
+    if (!analysis) return;
+    const dataStr = JSON.stringify(analysis, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `consensusai_${analysis.ticker}_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Analysis exported as JSON!');
+  };
+
+  const exportAsCSV = () => {
+    if (!analysis) return;
+    const headers = ['Model', 'Sentiment Score', 'Sentiment Label', 'Confidence', 'Latency (ms)'];
+    const rows = analysis.model_responses.map(r => [
+      r.model_name,
+      r.sentiment_score,
+      r.sentiment_label,
+      r.confidence,
+      r.latency_ms
+    ]);
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `consensusai_${analysis.ticker}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Analysis exported as CSV!');
+  };
+
+  const copyToClipboard = () => {
+    if (!analysis) return;
+    const summary = `ConsensusAI Analysis for $${analysis.ticker}
+Consensus: ${formatScore(analysis.consensus_score)} ${analysis.consensus_verdict}
+Divergence: ${(analysis.divergence_score * 100).toFixed(0)}%
+Models: ${analysis.models_successful}/${analysis.models_total} successful
+
+Model Breakdown:
+${analysis.model_responses.map(r => `- ${r.model_name}: ${formatScore(r.sentiment_score)} (${r.sentiment_label})`).join('\n')}
+
+Key Risks: ${analysis.aggregated_risks?.join(', ') || 'None identified'}
+
+Generated on ${new Date(analysis.timestamp).toLocaleString()}`;
+    
+    navigator.clipboard.writeText(summary);
+    setCopied(true);
+    toast.success('Analysis copied to clipboard!');
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const getSentimentIcon = (score) => {
@@ -102,6 +168,28 @@ export default function ConsensusAI() {
 
   const formatScore = (score) => {
     return `${score > 0 ? '+' : ''}${(score * 100).toFixed(0)}%`;
+  };
+
+  // Chart data
+  const getChartData = () => {
+    if (!analysis) return [];
+    return analysis.model_responses.map(r => ({
+      name: r.model_name.split(' ')[0],
+      fullName: r.model_name,
+      score: (r.sentiment_score * 100).toFixed(0),
+      confidence: (r.confidence * 100).toFixed(0),
+      latency: r.latency_ms,
+      fill: r.model_color
+    }));
+  };
+
+  const getPieData = () => {
+    if (!analysis) return [];
+    return analysis.model_responses.map(r => ({
+      name: r.model_name.split(' ')[0],
+      value: Math.abs(r.sentiment_score * 100),
+      fill: r.model_color
+    }));
   };
 
   const ConsensusGauge = ({ score, divergence, alert }) => {
@@ -163,7 +251,6 @@ export default function ConsensusAI() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Sentiment Score */}
           <div className="text-center py-4 rounded-lg bg-background/50">
             <div className="flex items-center justify-center gap-2 mb-2">
               {getSentimentIcon(response.sentiment_score)}
@@ -179,7 +266,6 @@ export default function ConsensusAI() {
             </div>
           </div>
           
-          {/* Reasoning */}
           <div>
             <h4 className="text-sm font-semibold mb-2 flex items-center gap-1">
               <Target className="h-4 w-4" /> Analysis
@@ -189,7 +275,6 @@ export default function ConsensusAI() {
             </p>
           </div>
           
-          {/* Key Risks */}
           {response.key_risks?.length > 0 && (
             <div>
               <h4 className="text-sm font-semibold mb-2 flex items-center gap-1">
@@ -225,7 +310,7 @@ export default function ConsensusAI() {
               AI-Powered Market Analysis
             </Badge>
             <h1 className="text-3xl md:text-5xl font-bold mb-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              Multi-Model <span className="gradient-text">Consensus</span> Engine
+              Multi-Model <span className="text-primary">Consensus</span> Engine
             </h1>
             <p className="text-lg text-muted-foreground animate-slide-up" style={{ animationDelay: '0.2s' }}>
               Query 3 AI models simultaneously to find consensus on market sentiment
@@ -344,7 +429,7 @@ export default function ConsensusAI() {
 
             {/* Analysis Results */}
             {analysis && !loading && (
-              <div className="space-y-6">
+              <div className="space-y-6" ref={analysisRef}>
                 {/* Consensus Summary */}
                 <Card className="border-2 border-primary/20 hover-lift animate-scale-in overflow-hidden">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500" />
@@ -359,13 +444,37 @@ export default function ConsensusAI() {
                           {new Date(analysis.timestamp).toLocaleString()} • {analysis.total_latency_ms}ms total
                         </CardDescription>
                       </div>
-                      <div className="text-right">
-                        <div className={`text-4xl font-bold ${getSentimentColor(analysis.consensus_score)}`}>
-                          {formatScore(analysis.consensus_score)}
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className={`text-4xl font-bold ${getSentimentColor(analysis.consensus_score)}`}>
+                            {formatScore(analysis.consensus_score)}
+                          </div>
+                          <Badge variant="outline" className="capitalize text-lg mt-1">
+                            {analysis.consensus_verdict}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="capitalize text-lg mt-1">
-                          {analysis.consensus_verdict}
-                        </Badge>
+                        {/* Export Dropdown */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={copyToClipboard}>
+                              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                              Copy Summary
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={exportAsJSON}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Export JSON
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={exportAsCSV}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Export CSV
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </CardHeader>
@@ -393,11 +502,101 @@ export default function ConsensusAI() {
                         </div>
                       ))}
                     </div>
+                  </CardContent>
+                </Card>
 
-                    {/* Headlines */}
-                    {analysis.headlines?.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold mb-3">News Headlines Analyzed</h4>
+                {/* Charts Section */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Sentiment Bar Chart */}
+                  <Card className="hover-lift animate-slide-up">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Sentiment Comparison
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={getChartData()} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis type="number" domain={[-100, 100]} tickFormatter={(v) => `${v}%`} />
+                            <YAxis type="category" dataKey="name" width={60} />
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-popover p-3 rounded-lg border shadow-lg">
+                                      <p className="font-semibold">{data.fullName}</p>
+                                      <p className="text-sm">Score: {data.score}%</p>
+                                      <p className="text-sm">Confidence: {data.confidence}%</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                              {getChartData().map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Confidence & Latency Chart */}
+                  <Card className="hover-lift animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Performance Metrics
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={getChartData()}>
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis dataKey="name" />
+                            <YAxis yAxisId="left" orientation="left" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                            <YAxis yAxisId="right" orientation="right" domain={[0, 'auto']} tickFormatter={(v) => `${v}ms`} />
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-popover p-3 rounded-lg border shadow-lg">
+                                      <p className="font-semibold">{data.fullName}</p>
+                                      <p className="text-sm text-green-500">Confidence: {data.confidence}%</p>
+                                      <p className="text-sm text-blue-500">Latency: {data.latency}ms</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Bar yAxisId="left" dataKey="confidence" fill="#22c55e" radius={[4, 4, 0, 0]} name="Confidence" />
+                            <Bar yAxisId="right" dataKey="latency" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Latency" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Headlines & Risks */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Headlines */}
+                  {analysis.headlines?.length > 0 && (
+                    <Card className="hover-lift animate-slide-up">
+                      <CardHeader>
+                        <CardTitle className="text-lg">News Headlines Analyzed</CardTitle>
+                      </CardHeader>
+                      <CardContent>
                         <ul className="space-y-2">
                           {analysis.headlines.map((headline, i) => (
                             <li key={i} className="text-sm text-muted-foreground flex items-start gap-2 hover:text-foreground transition-colors">
@@ -406,16 +605,20 @@ export default function ConsensusAI() {
                             </li>
                           ))}
                         </ul>
-                      </div>
-                    )}
+                      </CardContent>
+                    </Card>
+                  )}
 
-                    {/* Aggregated Risks */}
-                    {analysis.aggregated_risks?.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  {/* Aggregated Risks */}
+                  {analysis.aggregated_risks?.length > 0 && (
+                    <Card className="hover-lift animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5 text-amber-500" />
                           Aggregated Risk Factors
-                        </h4>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
                         <div className="flex flex-wrap gap-2">
                           {analysis.aggregated_risks.map((risk, i) => (
                             <Badge key={i} variant="outline" className="bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 transition-colors">
@@ -423,10 +626,10 @@ export default function ConsensusAI() {
                             </Badge>
                           ))}
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
 
                 {/* War Room - 3 Model Columns */}
                 <div>

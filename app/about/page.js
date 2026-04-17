@@ -84,7 +84,7 @@ export default function AboutPage() {
               Open Source AI Framework
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              About <span className="gradient-text">ConsensusAI</span>
+              About <span className="text-primary">ConsensusAI</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               An open-source framework designed to audit the financial reasoning of Large Language Models, 
@@ -122,7 +122,7 @@ export default function AboutPage() {
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
                     <Icon className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="text-3xl font-bold gradient-text">{stat.value}</div>
+                  <div className="text-3xl font-bold text-primary">{stat.value}</div>
                   <div className="text-sm text-muted-foreground">{stat.label}</div>
                 </div>
               );
