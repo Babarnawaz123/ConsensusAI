@@ -549,7 +549,7 @@ export default function ConsensusAI() {
               ConsensusAI - Multi-Model Market Auditor
             </div>
             <div>
-              Open Source • Powered by Groq LPU • Llama 3 • Mixtral • Gemma
+              Open Source • Powered by Groq LPU • Llama 3.1 • Llama 3.3 • Qwen3
             </div>
           </div>
         </div>
