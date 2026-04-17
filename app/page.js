@@ -13,7 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   TrendingUp, TrendingDown, Minus, AlertTriangle, Search, 
   Clock, Zap, BarChart3, History, Trophy, Brain, Activity,
-  ChevronRight, RefreshCw, Target, Shield, AlertCircle
+  ChevronRight, RefreshCw, Target, Shield, AlertCircle,
+  Sparkles, ArrowRight
 } from 'lucide-react';
 
 export default function ConsensusAI() {
@@ -26,7 +27,6 @@ export default function ConsensusAI() {
   const [activeTab, setActiveTab] = useState('analyze');
   const [error, setError] = useState(null);
 
-  // Fetch history and leaderboard on mount
   useEffect(() => {
     fetchHistory();
     fetchLeaderboard();
@@ -101,7 +101,6 @@ export default function ConsensusAI() {
   };
 
   const formatScore = (score) => {
-    const percentage = ((score + 1) / 2 * 100).toFixed(0);
     return `${score > 0 ? '+' : ''}${(score * 100).toFixed(0)}%`;
   };
 
@@ -126,7 +125,7 @@ export default function ConsensusAI() {
           <span>+100%</span>
         </div>
         {alert && (
-          <div className="mt-3 flex items-center gap-2 text-amber-500">
+          <div className="mt-3 flex items-center gap-2 text-amber-500 animate-pulse">
             <AlertTriangle className="h-4 w-4" />
             <span className="text-sm font-medium">High Divergence Alert - Models Conflicted</span>
           </div>
@@ -139,14 +138,22 @@ export default function ConsensusAI() {
     if (!response) return null;
     
     return (
-      <Card className={`border-2 ${getSentimentBg(response.sentiment_score)} transition-all hover:shadow-lg`}>
+      <Card 
+        className={`border-2 ${getSentimentBg(response.sentiment_score)} transition-all hover:shadow-xl hover:-translate-y-1 animate-slide-up`}
+        style={{ animationDelay: `${index * 0.15}s` }}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Brain className="h-5 w-5" style={{ color: response.model_color }} />
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${response.model_color}15` }}
+              >
+                <Brain className="h-5 w-5" style={{ color: response.model_color }} />
+              </div>
               <CardTitle className="text-lg">{response.model_name}</CardTitle>
             </div>
-            <Badge variant={response.success ? 'default' : 'destructive'}>
+            <Badge variant={response.success ? 'default' : 'destructive'} className="animate-scale-in">
               {response.success ? 'Success' : 'Failed'}
             </Badge>
           </div>
@@ -204,33 +211,32 @@ export default function ConsensusAI() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Brain className="h-8 w-8 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-                  ConsensusAI
-                </h1>
-                <p className="text-sm text-muted-foreground">Multi-Model Market Auditor</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Zap className="h-4 w-4 text-yellow-500" />
-              Powered by Groq LPU
-            </div>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative py-12 md:py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5" />
+        <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-10 left-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+        
+        <div className="container mx-auto px-4 relative">
+          <div className="max-w-4xl mx-auto text-center mb-8">
+            <Badge variant="outline" className="mb-4 animate-slide-up">
+              <Sparkles className="h-3 w-3 mr-2" />
+              AI-Powered Market Analysis
+            </Badge>
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+              Multi-Model <span className="gradient-text">Consensus</span> Engine
+            </h1>
+            <p className="text-lg text-muted-foreground animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              Query 3 AI models simultaneously to find consensus on market sentiment
+            </p>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 pb-12">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
             <TabsTrigger value="analyze" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" /> Analyze
             </TabsTrigger>
@@ -245,7 +251,7 @@ export default function ConsensusAI() {
           {/* Analyze Tab */}
           <TabsContent value="analyze" className="space-y-6">
             {/* Search Section */}
-            <Card>
+            <Card className="hover-lift animate-scale-in">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Search className="h-5 w-5" />
@@ -263,18 +269,19 @@ export default function ConsensusAI() {
                       value={ticker}
                       onChange={(e) => setTicker(e.target.value.toUpperCase())}
                       onKeyDown={(e) => e.key === 'Enter' && analyzeStock()}
-                      className="text-lg font-mono"
+                      className="text-lg font-mono h-12 transition-all focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                   <Button 
                     onClick={analyzeStock} 
                     disabled={loading || !ticker.trim()}
-                    className="px-6"
+                    className="px-6 h-12 group"
+                    size="lg"
                   >
                     {loading ? (
                       <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Analyzing...</>
                     ) : (
-                      <><Zap className="h-4 w-4 mr-2" /> Analyze</>
+                      <><Zap className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> Analyze</>
                     )}
                   </Button>
                 </div>
@@ -282,14 +289,14 @@ export default function ConsensusAI() {
                   placeholder="Optional: Add context (e.g., 'Focus on AI chip demand')"
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
-                  className="text-sm"
+                  className="text-sm transition-all focus:ring-2 focus:ring-primary/20"
                 />
               </CardContent>
             </Card>
 
             {/* Error Display */}
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="animate-scale-in">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
@@ -298,7 +305,7 @@ export default function ConsensusAI() {
 
             {/* Loading State */}
             {loading && (
-              <Card>
+              <Card className="animate-scale-in">
                 <CardContent className="py-12">
                   <div className="text-center space-y-4">
                     <div className="flex justify-center">
@@ -310,13 +317,25 @@ export default function ConsensusAI() {
                     <div>
                       <h3 className="text-lg font-semibold">Running Multi-Model Analysis</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Querying Llama 3, Mixtral & Gemma in parallel...
+                        Querying Llama 3.1, Llama 3.3 & Qwen3 in parallel...
                       </p>
                     </div>
                     <div className="max-w-xs mx-auto space-y-2">
-                      <Progress value={33} className="h-2" />
-                      <Progress value={66} className="h-2" />
-                      <Progress value={90} className="h-2" />
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-blue-500" />
+                        <Progress value={33} className="h-2 flex-1" />
+                        <span className="text-xs text-muted-foreground">Llama 3.1</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-purple-500" />
+                        <Progress value={66} className="h-2 flex-1" />
+                        <span className="text-xs text-muted-foreground">Llama 3.3</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-green-500" />
+                        <Progress value={90} className="h-2 flex-1" />
+                        <span className="text-xs text-muted-foreground">Qwen3</span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -327,12 +346,13 @@ export default function ConsensusAI() {
             {analysis && !loading && (
               <div className="space-y-6">
                 {/* Consensus Summary */}
-                <Card className="border-2 border-primary/20">
+                <Card className="border-2 border-primary/20 hover-lift animate-scale-in overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500" />
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
                       <div>
                         <CardTitle className="text-2xl flex items-center gap-3">
-                          <span className="font-mono bg-primary/10 px-3 py-1 rounded">${analysis.ticker}</span>
+                          <span className="font-mono bg-primary/10 px-3 py-1 rounded-lg">${analysis.ticker}</span>
                           Consensus Report
                         </CardTitle>
                         <CardDescription className="mt-2">
@@ -361,22 +381,17 @@ export default function ConsensusAI() {
                     
                     {/* Metrics Row */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <div className="text-2xl font-bold">{analysis.models_successful}/{analysis.models_total}</div>
-                        <div className="text-xs text-muted-foreground">Models Successful</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <div className="text-2xl font-bold">{(analysis.divergence_score * 100).toFixed(0)}%</div>
-                        <div className="text-xs text-muted-foreground">Divergence Score</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <div className="text-2xl font-bold">{analysis.headlines?.length || 0}</div>
-                        <div className="text-xs text-muted-foreground">Headlines Analyzed</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <div className="text-2xl font-bold">{analysis.total_latency_ms}ms</div>
-                        <div className="text-xs text-muted-foreground">Total Latency</div>
-                      </div>
+                      {[
+                        { value: `${analysis.models_successful}/${analysis.models_total}`, label: 'Models Successful', color: 'text-green-500' },
+                        { value: `${(analysis.divergence_score * 100).toFixed(0)}%`, label: 'Divergence Score', color: analysis.divergence_alert ? 'text-amber-500' : 'text-foreground' },
+                        { value: analysis.headlines?.length || 0, label: 'Headlines Analyzed', color: 'text-blue-500' },
+                        { value: `${analysis.total_latency_ms}ms`, label: 'Total Latency', color: 'text-purple-500' },
+                      ].map((metric, i) => (
+                        <div key={metric.label} className="text-center p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                          <div className={`text-2xl font-bold ${metric.color}`}>{metric.value}</div>
+                          <div className="text-xs text-muted-foreground">{metric.label}</div>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Headlines */}
@@ -385,7 +400,7 @@ export default function ConsensusAI() {
                         <h4 className="text-sm font-semibold mb-3">News Headlines Analyzed</h4>
                         <ul className="space-y-2">
                           {analysis.headlines.map((headline, i) => (
-                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2 hover:text-foreground transition-colors">
                               <ChevronRight className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                               {headline}
                             </li>
@@ -403,7 +418,7 @@ export default function ConsensusAI() {
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {analysis.aggregated_risks.map((risk, i) => (
-                            <Badge key={i} variant="outline" className="bg-amber-500/10 border-amber-500/30">
+                            <Badge key={i} variant="outline" className="bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 transition-colors">
                               {risk}
                             </Badge>
                           ))}
@@ -430,8 +445,8 @@ export default function ConsensusAI() {
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history" className="space-y-4">
-            <Card>
+          <TabsContent value="history" className="space-y-4 animate-slide-up">
+            <Card className="hover-lift">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <History className="h-5 w-5" />
@@ -443,16 +458,18 @@ export default function ConsensusAI() {
               </CardHeader>
               <CardContent>
                 {history.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No analyses yet. Start by analyzing a stock ticker!
+                  <div className="text-center py-12 text-muted-foreground">
+                    <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No analyses yet. Start by analyzing a stock ticker!</p>
                   </div>
                 ) : (
                   <ScrollArea className="h-[500px]">
                     <div className="space-y-3">
-                      {history.map((item) => (
+                      {history.map((item, index) => (
                         <div 
                           key={item.id} 
-                          className="p-4 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-colors"
+                          className="p-4 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 animate-slide-up"
+                          style={{ animationDelay: `${index * 0.05}s` }}
                           onClick={() => {
                             setAnalysis(item);
                             setActiveTab('analyze');
@@ -490,8 +507,8 @@ export default function ConsensusAI() {
           </TabsContent>
 
           {/* Leaderboard Tab */}
-          <TabsContent value="leaderboard" className="space-y-4">
-            <Card>
+          <TabsContent value="leaderboard" className="space-y-4 animate-slide-up">
+            <Card className="hover-lift">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-yellow-500" />
@@ -503,17 +520,25 @@ export default function ConsensusAI() {
               </CardHeader>
               <CardContent>
                 {leaderboard.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No leaderboard data yet. Analyses will populate this over time.
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No leaderboard data yet. Analyses will populate this over time.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {leaderboard.map((model, index) => (
-                      <div key={model.model_name} className="flex items-center gap-4 p-4 rounded-lg border bg-card">
-                        <div className="text-2xl font-bold text-muted-foreground w-8">
+                      <div 
+                        key={model.model_name} 
+                        className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-all animate-slide-in-right"
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <div className={`text-2xl font-bold w-8 ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : index === 2 ? 'text-amber-600' : 'text-muted-foreground'}`}>
                           #{index + 1}
                         </div>
-                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${model.model_color}20` }}>
+                        <div 
+                          className="p-2 rounded-lg" 
+                          style={{ backgroundColor: `${model.model_color}20` }}
+                        >
                           <Brain className="h-6 w-6" style={{ color: model.model_color }} />
                         </div>
                         <div className="flex-1">
@@ -538,22 +563,7 @@ export default function ConsensusAI() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t mt-12">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4" />
-              ConsensusAI - Multi-Model Market Auditor
-            </div>
-            <div>
-              Open Source • Powered by Groq LPU • Llama 3.1 • Llama 3.3 • Qwen3
-            </div>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }
